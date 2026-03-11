@@ -18,11 +18,20 @@ class Yosys(Edatool):
     TOOL_OPTIONS = {
         "arch": {
             "type": "str",
-            "desc": "Target architecture. Legal values are *xilinx*, *ice40* and *ecp5*",
+            "desc": "Target architecture. Legal values are *rtl* *xilinx*, *ice40* and *ecp5*",
         },
         "output_format": {
             "type": "str",
             "desc": "Output file format. Legal values are *json*, *edif*, *blif*, *verilog*",
+        },
+        "systemverilog_frontend": {
+            "type": "str",
+            "desc": "Frontend to use for reading Verilog and SystemVerilog sources. Legal values are *yosys* and *slang*",
+        },
+        "systemverilog_frontend_options": {
+            "type": "str",
+            "desc": "Additional options for the selected SystemVerilog frontend (ignored for yosys)",
+            "list": True,
         },
         "yosys_template": {
             "type": "str",
@@ -43,6 +52,7 @@ class Yosys(Edatool):
         super().setup(edam)
 
         yosys_template = self.tool_options.get("yosys_template")
+        systemverilog_frontend = self.tool_options.get("systemverilog_frontend") or "yosys"
 
         incdirs = []
         file_table = []
@@ -50,13 +60,22 @@ class Yosys(Edatool):
 
         depfiles = []
         has_uhdm = False
+        has_slang = systemverilog_frontend == "slang"
+        slang_files = []
         for f in self.files:
             file_type = f.get("file_type", "")
             cmd = ""
+            use_slang = False
             if file_type.startswith("verilogSource"):
-                cmd = "read_verilog"
+                if has_slang:
+                    use_slang = True
+                else:
+                    cmd = "read_verilog"
             elif file_type.startswith("systemVerilogSource"):
-                cmd = "read_verilog -sv"
+                if has_slang:
+                    use_slang = True
+                else:
+                    cmd = "read_verilog -sv"
             elif file_type == "uhdm":
                 cmd = "read_uhdm"
                 has_uhdm = True
@@ -70,6 +89,10 @@ class Yosys(Edatool):
                 depfiles.append(f["name"])
                 if not self._add_include_dir(f, incdirs):
                     file_table.append(cmd + " {" + f["name"] + "}")
+            elif use_slang:
+                depfiles.append(f["name"])
+                if not self._add_include_dir(f, incdirs):
+                    slang_files.append("{" + f["name"] + "}")
             else:
                 unused_files.append(f)
 
@@ -104,12 +127,28 @@ class Yosys(Edatool):
             verilog_params.append(
                 _s.format(key, self._param_value_str(value), self.toplevel)
             )
+        
+        slang_cmd = ""
+        if slang_files:
+            slang_cmd = " ".join(
+                ["read_slang"]
+                + self.tool_options.get("systemverilog_frontend_options", "")
+                + ["-D " + key + "=" + value for key, value in self.vlogdefine.items()]
+                + ["-G " + key + "=" + value for key, value in self.vlogparam.items()]
+                + ["-I" + d for d in incdirs]
+                + ["-top " + self.toplevel]
+                + ["--std latest"]
+                + slang_files
+            )
+            file_table.append(slang_cmd)
 
         arch = self._require_tool_option("arch")
 
         plugins = []
         if has_uhdm:
             plugins.append("uhdm")
+        if has_slang:
+            plugins.append("slang")
 
         template = yosys_template or "edalize_yosys_template.tcl"
         template_vars = {
@@ -119,7 +158,7 @@ class Yosys(Edatool):
             "file_table": "\n".join(file_table),
             "incdirs": " ".join(["-I" + d for d in incdirs]),
             "top": self.toplevel,
-            "synth_command": "synth_" + arch,
+            "synth_command": ("synth_" + arch) if arch != "rtl" else "prep",
             "synth_options": " ".join(self.tool_options.get("yosys_synth_options", "")),
             "write_command": "write_" + output_format,
             "output_format": "v" if output_format == "verilog" else output_format,
