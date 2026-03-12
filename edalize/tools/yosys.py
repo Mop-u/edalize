@@ -158,7 +158,7 @@ class Yosys(Edatool):
             "file_table": "\n".join(file_table),
             "incdirs": " ".join(["-I" + d for d in incdirs]),
             "top": self.toplevel,
-            "synth_command": ("synth_" + arch) if arch != "rtl" else "prep",
+            "synth_command": "synth" if arch == "rtl" else ("synth_" + arch),
             "synth_options": " ".join(self.tool_options.get("yosys_synth_options", "")),
             "write_command": "write_" + output_format,
             "output_format": "v" if output_format == "verilog" else output_format,
