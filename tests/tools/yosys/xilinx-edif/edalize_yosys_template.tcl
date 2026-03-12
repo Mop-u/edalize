@@ -13,6 +13,6 @@ set_params
 
 verilog_defaults -pop
 
-synth $top
+do_synth $top
 
 write_edif -pvector bra $name.edif

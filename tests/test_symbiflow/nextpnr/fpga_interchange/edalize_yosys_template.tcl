@@ -11,6 +11,6 @@ set_params
 
 verilog_defaults -pop
 
-synth $top
+do_synth $top
 
 write_json test_symbiflow_nextpnr_fpga_interchange_0.json

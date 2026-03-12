@@ -19,7 +19,7 @@ chparam -set vlogparam_bool 1 top_module
 chparam -set vlogparam_int 42 top_module
 chparam -set vlogparam_str {"hello"} top_module}
 
-proc synth {top} {
+proc do_synth {top} {
 synth_xilinx  -top $top
 }
 

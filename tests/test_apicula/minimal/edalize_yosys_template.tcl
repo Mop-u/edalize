@@ -11,6 +11,6 @@ set_params
 
 verilog_defaults -pop
 
-synth $top
+do_synth $top
 
 write_json test_apicula_0.json

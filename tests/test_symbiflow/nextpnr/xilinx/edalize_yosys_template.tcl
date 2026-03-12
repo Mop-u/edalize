@@ -11,6 +11,6 @@ set_params
 
 verilog_defaults -pop
 
-synth $top
+do_synth $top
 
 write_json test_symbiflow_nextpnr_xilinx_0.json

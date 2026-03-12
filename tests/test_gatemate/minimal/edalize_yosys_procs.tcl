@@ -17,7 +17,7 @@ proc set_incdirs {} {
 proc set_params {} {
 }
 
-proc synth {top} {
+proc do_synth {top} {
 synth_gatemate  -top $top
 }
 

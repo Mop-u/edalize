@@ -24,7 +24,7 @@ chparam -set vlogparam_bool 1 top_module
 chparam -set vlogparam_int 42 top_module
 chparam -set vlogparam_str {"hello"} top_module}
 
-proc synth {top} {
+proc do_synth {top} {
 synth_intel_alm some yosys_synth_options -top $top
 }
 

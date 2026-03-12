@@ -27,7 +27,7 @@ chparam -set vlogparam_bool 1 None
 chparam -set vlogparam_int 42 None
 chparam -set vlogparam_str {"hello"} None}
 
-proc synth {top} {
+proc do_synth {top} {
 synth_ice40  -top $top
 }
 
