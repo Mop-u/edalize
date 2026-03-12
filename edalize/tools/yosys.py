@@ -130,9 +130,10 @@ class Yosys(Edatool):
         
         slang_cmd = ""
         if slang_files:
+            slang_opts = self.tool_options.get("systemverilog_frontend_options", "")
             slang_cmd = " ".join(
                 ["read_slang"]
-                + self.tool_options.get("systemverilog_frontend_options", "")
+                + slang_opts
                 + ["-D " + key + "=" + value for key, value in self.vlogdefine.items()]
                 + ["-G " + key + "=" + value for key, value in self.vlogparam.items()]
                 + ["-I" + d for d in incdirs]
@@ -141,6 +142,10 @@ class Yosys(Edatool):
                 + slang_files
             )
             file_table.append(slang_cmd)
+            if "--ignore-initial" in slang_opts:
+                # https://github.com/povik/yosys-slang/issues/119
+                # Safely apply this workaround when user explicitly disables initial values
+                file_table.append("setattr -unset init")
 
         arch = self._require_tool_option("arch")
 
